@@ -1,13 +1,13 @@
 {
   "name": "@wal-li/server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "./src/index.js",
   "type": "module",
   "scripts": {
     "test": "mocha",
     "coverage": "c8 npm run test",
-    "publish": "npm publish --access public --tag beta"
+    "beta": "npm publish --access public --tag beta"
   },
   "keywords": [
     "server"
