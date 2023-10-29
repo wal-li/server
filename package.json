@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "mocha",
-    "coverage": "c8 npm run test"
+    "coverage": "c8 npm run test",
+    "publish": "npm publish --access public --tag beta"
   },
   "keywords": [
     "server"
