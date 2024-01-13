@@ -3,6 +3,8 @@ import { createServer as createLegacyServer, METHODS } from 'node:http';
 import { DEFAULT_HOST, DEFAULT_PORT, DEFAULT_NAME } from './constants.js';
 import { match } from 'path-to-regexp';
 import { createLogger } from './logger.js';
+import { prepareInput } from './input.js';
+import { sendOutput } from './output.js';
 
 export function createServer(config = {}) {
   const port = config.port || DEFAULT_PORT;
@@ -35,7 +37,7 @@ export function createServer(config = {}) {
     const ltime = new Date();
 
     // main handle
-    const input = { path: req.url, method: req.method };
+    const input = prepareInput(req);
     let output;
     try {
       output = (await handleNext(0, input)) || {
@@ -49,9 +51,7 @@ export function createServer(config = {}) {
       };
       this.emit('error', err);
     }
-
-    res.writeHead(output.status);
-    res.end(output.body);
+    sendOutput(res, output);
 
     // logging
     const ctime = new Date();
