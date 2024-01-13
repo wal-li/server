@@ -1,31 +1,72 @@
 import chai, { expect } from 'chai';
-import { Server } from '../src/index.js';
 import chaiHttp from 'chai-http';
-import {} from 'socket.io';
+import { createServer } from '../src/index.js';
 
 chai.use(chaiHttp);
 
 describe('Server test', function () {
   it('should create a new server', async () => {
-    const server = new Server(8080);
-
-    server.router.get('/hi', async (ctx) => {
-      ctx.body = 'hello';
-    });
+    const server = createServer({ port: 8080 });
 
     await server.start();
 
-    // server
-    const res = await chai.request('http://localhost:8080').get('/hi');
+    const res = await chai.request(server.address).get('/hello');
+    expect(res).to.has.property('status', 404);
 
-    expect(res).to.has.property('text', 'hello');
+    await server.stop();
+  });
+
+  it('should handle get request', async () => {
+    const server = createServer({ port: 8080 });
+    server.get('/', async (input) => {
+      return {
+        status: 200,
+        body: 'ok'
+      };
+    });
+    await server.start();
+
+    const res = await chai.request(server.address).get('/');
     expect(res).to.has.property('status', 200);
+    expect(res).to.has.property('text', 'ok');
 
-    // socket.io
-    const res2 = await chai.request('http://localhost:8080').get('/socket.io/socket.io.js');
+    await server.stop();
+  });
 
-    expect(res2.body.toString().indexOf('Socket.IO')).to.not.eq(-1);
-    expect(res2).to.has.property('status', 200);
+  it('should nested route', async () => {
+    const server = createServer({ port: 8080 });
+    server.get('/', async (input, next) => {
+      const res = await next();
+
+      return {
+        status: 200,
+        body: 'parent ' + res.body
+      };
+    });
+    server.get('/', async () => {
+      return {
+        body: 'child'
+      };
+    });
+    await server.start();
+
+    const res = await chai.request(server.address).get('/');
+    expect(res).to.has.property('status', 200);
+    expect(res).to.has.property('text', 'parent child');
+
+    await server.stop();
+  });
+
+  it('should handle exception', async () => {
+    const server = createServer({ port: 8080 });
+    server.get('/', async (input) => {
+      throw Error('Something wrong');
+    });
+    await server.start();
+
+    const res = await chai.request(server.address).get('/');
+    expect(res).to.has.property('status', 200);
+    expect(res).to.has.property('text', 'ok');
 
     await server.stop();
   });

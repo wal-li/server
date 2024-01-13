@@ -1,5 +1,1 @@
 # Walli Server
-
-## License
-
-MIT.
