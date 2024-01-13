@@ -5,7 +5,7 @@
   "main": "./src/index.js",
   "type": "module",
   "scripts": {
-    "test": "mocha",
+    "test": "mocha --exit",
     "coverage": "c8 npm run test",
     "beta": "npm publish --access public --tag beta"
   },
@@ -15,12 +15,15 @@
   "author": "HaoVA <hi@haova.me> (https://www.haova.me)",
   "license": "MIT",
   "devDependencies": {
-    "c9": "^3.1.3534",
+    "c8": "^8.0.1",
     "chai": "^4.3.10",
     "chai-http": "^4.4.0",
     "mocha": "^10.2.0"
   },
   "dependencies": {
-    "path-to-regexp": "^6.2.1"
+    "colors": "^1.4.0",
+    "path-to-regexp": "^6.2.1",
+    "pino": "^8.17.2",
+    "pino-pretty": "^10.3.1"
   }
 }
