@@ -1,4 +1,4 @@
-import chai, { expect } from 'chai';
+import chai, { assert, expect } from 'chai';
 import chaiHttp from 'chai-http';
 import { createServer } from '../src/index.js';
 
@@ -17,6 +17,7 @@ describe('Server test', function () {
 
     // start server
     await server.start();
+    await server.start();
 
     // test server
     const res = await chai.request(server.address).get('/hello');
@@ -25,6 +26,32 @@ describe('Server test', function () {
 
     // stop server
     await server.stop();
+    await server.stop();
+  });
+
+  it('should not start server because of duplicate port', async () => {
+    const server1 = createServer({ port: 8080 });
+    const server2 = createServer({ port: 8080 });
+
+    await server1.start();
+
+    try {
+      await server2.start();
+      assert.fail('should error');
+    } catch (err) {
+      expect(err).to.has.property('code', 'EADDRINUSE');
+    }
+
+    await server1.stop();
+  });
+
+  it('should throw error because of invalid route', async () => {
+    try {
+      server.get(undefined);
+      assert.fail('should error');
+    } catch (err) {
+      expect(err).to.has.property('message', "Invalid argument 'undefined'");
+    }
   });
 
   it('should handle get and post request', async () => {
@@ -96,6 +123,8 @@ describe('Server test', function () {
     server.get('/', async () => {
       throw Error('Something wrong');
     });
+    server.get('/ok', () => ({ status: 200, body: 'ok' }));
+    server.get('/never-end', () => new Promise(() => {}));
 
     // start server
     await server.start();
@@ -103,7 +132,13 @@ describe('Server test', function () {
     // test server
     const res = await chai.request(server.address).get('/');
     expect(res).to.has.property('status', 500);
-    expect(res).to.has.property('text', 'Internal Server Error');
+    expect(res).to.has.property('text', 'Something wrong');
+
+    const res2 = await chai.request(server.address).get('/ok');
+    expect(res2).to.has.property('status', 200);
+    expect(res2).to.has.property('text', 'ok');
+
+    chai.request(server.address).get('/never-end').then();
 
     await server.stop();
   });

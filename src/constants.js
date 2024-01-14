@@ -10,3 +10,6 @@ export const LOGGER_LEVELS = {
   error: 50,
   fatal: 60
 };
+
+export const NOT_FOUND_MESSAGE = 'Not Found';
+export const INTERNAL_ERROR_MESSAGE = 'Internal Server Error';
