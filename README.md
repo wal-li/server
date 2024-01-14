@@ -58,7 +58,8 @@ Using all `http.METHODS` with lowercase form, but method in `input` still be upp
 
 Additions:
 
-- `all` or `use`: match all method
+- `all`: match all method
+- `use`: module
 
 ### Input
 
@@ -113,6 +114,8 @@ return createOutput({ can: { be: 'json' } }, { status: 200 });
 
 - The first argument is `body`, this can be optional.
 - The second is a response object without `body`, this can be optional.
+
+### Module
 
 ## Licenses
 

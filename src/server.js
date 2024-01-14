@@ -1,40 +1,35 @@
 import colors from 'colors';
-import { createServer as createLegacyServer, METHODS } from 'node:http';
+import { createServer as createLegacyServer } from 'node:http';
 import { DEFAULT_HOST, DEFAULT_PORT, DEFAULT_NAME } from './constants.js';
-import { match } from 'path-to-regexp';
 import { createLogger } from './logger.js';
 import { prepareInput } from './input.js';
 import { sendOutput } from './output.js';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
+import { Router } from './router.js';
 
-export function createServer(config = {}) {
-  const port = config.port || DEFAULT_PORT;
-  const host = config.host || DEFAULT_HOST;
-  const name = config.name || DEFAULT_NAME;
-  const debug = config.debug || false;
+export class Server extends Router {
+  constructor(config = {}) {
+    super();
 
-  const routes = [];
+    this.port = config.port || DEFAULT_PORT;
+    this.host = config.host || DEFAULT_HOST;
+    this.name = config.name || DEFAULT_NAME;
+    this.debug = config.debug || false;
 
-  const handleNext = async (startIndex, input) => {
-    for (let i = startIndex; i < routes.length; i++) {
-      const route = routes[i];
+    this.isRunning = false;
+    this.logger = createLogger(this.name);
+    this.legacyServer = createLegacyServer(this.serverCallback.bind(this));
 
-      if (
-        route.method !== 'all' &&
-        route.method !== 'use' &&
-        route.method !== input.method.toLowerCase()
-      )
-        continue;
+    this.legacyServer.on('error', (err) =>
+      this.logger.error(this.debug ? err : err.message)
+    );
+  }
 
-      const result = route.match(input.path);
-      if (!result) continue;
+  get address() {
+    return `http://${this.host}:${this.port}`;
+  }
 
-      input.params = result.params;
-      return await route.handle(input, () => handleNext(i + 1, input));
-    }
-  };
-
-  const legacyServer = createLegacyServer(async function (req, res) {
+  async serverCallback(req, res) {
     let isResponse = false;
 
     try {
@@ -44,17 +39,17 @@ export function createServer(config = {}) {
       const input = await prepareInput(req);
       let output;
       try {
-        output = (await handleNext(0, input)) || {};
+        output = (await this.handleNext(0, input)) || {};
       } catch (err) {
         output = { body: err };
-        this.emit('error', err);
+        this.legacyServer.emit('error', err);
       }
       isResponse = true;
       const nextOutput = sendOutput(res, output);
 
       // logging
       const ctime = new Date();
-      logger.http(
+      this.logger.http(
         [
           colors.magenta(input.method),
           Math.floor(nextOutput.status / 100) === 2
@@ -69,83 +64,58 @@ export function createServer(config = {}) {
         res.writeHead(StatusCodes.INTERNAL_SERVER_ERROR);
         res.end(reqErr.message || ReasonPhrases.INTERNAL_SERVER_ERROR);
       }
-      logger.error(reqErr);
+      this.logger.error(reqErr);
     }
-  });
+  }
 
-  const logger = createLogger(name);
+  async handleNext(startIndex, input) {
+    for (let i = startIndex; i < this.routes.length; i++) {
+      const route = this.routes[i];
 
-  let isRunning = false;
+      if (
+        route.methods.indexOf('all') === -1 &&
+        route.methods.indexOf('use') === -1 &&
+        route.methods.indexOf(input.method.toLowerCase()) === -1
+      )
+        continue;
 
-  legacyServer.on('error', (err) => logger.error(debug ? err : err.message));
+      const result = route.match(input.path);
+      if (!result) continue;
 
-  return {
-    address: `http://${host}:${port}`,
+      input.params = result.params;
+      return await route.handle(input, () => this.handleNext(i + 1, input));
+    }
+  }
 
-    start() {
-      return new Promise((resolve, reject) => {
-        if (isRunning) return resolve();
+  start() {
+    return new Promise((resolve, reject) => {
+      if (this.isRunning) return resolve();
 
-        legacyServer.on('error', (err) => {
-          if (!isRunning) reject(err);
-        });
-
-        legacyServer.listen(port, host, () => {
-          isRunning = true;
-
-          logger.info(`Server is running at ${this.address}`);
-          resolve();
-        });
+      this.legacyServer.on('error', (err) => {
+        if (!this.isRunning) reject(err);
       });
-    },
 
-    stop() {
-      return new Promise((resolve) => {
-        if (!isRunning) return resolve();
+      this.legacyServer.listen(this.port, this.host, () => {
+        this.isRunning = true;
 
-        legacyServer.close(() => {
-          isRunning = false;
-          resolve();
-        });
+        this.logger.info(`Server is running at ${this.address}`);
+        resolve();
       });
-    },
+    });
+  }
 
-    ...[...METHODS, 'all', 'use']
-      .map((method) => method.toLowerCase())
-      .map(function (method) {
-        return {
-          [method]: (...args) => {
-            const paths = [];
-            const handlers = [];
+  stop() {
+    return new Promise((resolve) => {
+      if (!this.isRunning) return resolve();
 
-            // handle args
-            for (const arg of args) {
-              const typeOfArg = typeof arg;
-              if (typeOfArg === 'string') {
-                paths.push(arg);
-              } else if (typeOfArg === 'function') {
-                handlers.push(arg);
-              } else {
-                throw new Error(`Invalid argument '${typeOfArg}'`);
-              }
-            }
+      this.legacyServer.close(() => {
+        this.isRunning = false;
+        resolve();
+      });
+    });
+  }
+}
 
-            if (paths.length === 0) paths.push('/');
-
-            // append routes
-            for (const path of paths) {
-              for (const handler of handlers) {
-                routes.push({
-                  method,
-                  path,
-                  match: match(path, { decode: decodeURIComponent }),
-                  handle: handler
-                });
-              }
-            }
-          }
-        };
-      })
-      .reduce((o, a) => ({ ...o, ...a }), {})
-  };
+export function createServer(config = {}) {
+  return new Server(config);
 }

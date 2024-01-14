@@ -1,2 +1,3 @@
-export { createServer } from './server.js';
-export { createOutput, OutputFile } from './output.js';
+export { Server, createServer } from './server.js';
+export { OutputFile, createOutput } from './output.js';
+export { Router, createRouter } from './router.js';
