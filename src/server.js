@@ -74,7 +74,6 @@ export class Server extends Router {
 
       if (
         route.methods.indexOf('all') === -1 &&
-        route.methods.indexOf('use') === -1 &&
         route.methods.indexOf(input.method.toLowerCase()) === -1
       )
         continue;

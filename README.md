@@ -127,6 +127,8 @@ const router = createRouter();
 server.use('/base', router);
 ```
 
+When using `use`, it will be **inherited** method list from the child, when using other methods, it will be **merged** with the method list of the child.
+
 ## Licenses
 
 MIT.

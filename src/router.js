@@ -12,6 +12,7 @@ for (const method of ROUTE_METHODS)
   Router.prototype[method] = function (...args) {
     const paths = [];
     const handlers = [];
+    const methods = method === 'use' ? [] : [method];
 
     // handle args
     for (const arg of args) {
@@ -34,7 +35,7 @@ for (const method of ROUTE_METHODS)
           for (const route of handler.routes) {
             const nextPath = join(path, route.path);
             this.routes.push({
-              methods: [...route.methods, method],
+              methods: [...route.methods, ...methods],
               path: nextPath,
               match: match(nextPath, { decode: decodeURIComponent }),
               handle: route.handle
@@ -42,7 +43,7 @@ for (const method of ROUTE_METHODS)
           }
         } else {
           this.routes.push({
-            methods: [method],
+            methods,
             path,
             match: match(path, { decode: decodeURIComponent }),
             handle: handler

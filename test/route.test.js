@@ -14,6 +14,7 @@ describe('Route test', function () {
 
     const subRouter = createRouter();
     subRouter.get('/ok', () => ({ body: 'ok' }));
+    subRouter.post('/ok', () => ({ body: 'not ok' }));
 
     server.use(subRouter);
     server.use('/sub-route', subRouter);
@@ -51,5 +52,9 @@ describe('Route test', function () {
     const res2 = await makeRequest().get('/sub-route/ok');
     expect(res2).to.has.property('status', 200);
     expect(res2).to.has.property('text', 'ok');
+
+    const res3 = await makeRequest().post('/sub-route/ok');
+    expect(res3).to.has.property('status', 200);
+    expect(res3).to.has.property('text', 'not ok');
   });
 });
