@@ -1,6 +1,6 @@
 import chai, { expect } from 'chai';
 import chaiHttp from 'chai-http';
-import { createOutput, createServer } from '../src/index.js';
+import { OutputFile, createOutput, createServer } from '../src/index.js';
 
 chai.use(chaiHttp);
 
@@ -31,6 +31,10 @@ describe('Response test', function () {
     server.get('/response-method', async () =>
       createOutput({ can: { be: ['json'] } })
     );
+
+    server.get('/cat-image', async () => ({
+      body: new OutputFile('./test/fixtures/cat.png')
+    }));
 
     await server.start();
   });
@@ -82,5 +86,18 @@ describe('Response test', function () {
     expect(res.headers).to.has.property('content-type', 'application/json');
     expect(res.headers).to.has.property('content-length', '23');
     expect(res.body).to.has.property('can');
+  });
+
+  it('should return a binary response', async () => {
+    const res = await makeRequest().get('/cat-image').buffer();
+
+    expect(res).to.has.property('status', 200);
+
+    expect(res.headers).to.has.property('content-type', 'image/png');
+    expect(res.headers).to.has.property('content-length', '51024');
+
+    expect(
+      res.body.slice(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+    ).to.be.eq(true);
   });
 });
