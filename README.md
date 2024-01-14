@@ -117,6 +117,16 @@ return createOutput({ can: { be: 'json' } }, { status: 200 });
 
 ### Module
 
+```js
+import { createRouter } from '@wal-li/server';
+
+const router = createRouter();
+
+// routing
+
+server.use('/base', router);
+```
+
 ## Licenses
 
 MIT.
