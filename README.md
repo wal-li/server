@@ -21,7 +21,8 @@ await server.stop();
 - `port`: (default: `8080`)
 - `host`: (default: `127.0.0.1`)
 - `name`: (default: `server`)
-- `debug`: (defalt: `false`)
+- `debug`: (default: `false`)
+- `cors`: (default: `false`)
 
 ## Features
 
@@ -30,9 +31,15 @@ await server.stop();
 Single path-handler.
 
 ```js
-server.get('/:some/:path', async (input) => {
-  return output;
-});
+server.get(
+  '/:some/:path',
+  async (input) => {
+    return output;
+  },
+  {
+    some: 'config'
+  }
+);
 ```
 
 Multiple path-handlers;
@@ -46,11 +53,19 @@ server.post(
   },
   async () => {
     /* handler b */
+  },
+  {
+    some: 'config'
+  },
+  {
+    some: 'config'
   }
 );
 ```
 
 If no path defined, it will use `/`.
+
+For config information, see **Config** section above.
 
 ### Methods
 
@@ -129,6 +144,16 @@ server.use('/base', router);
 
 When using `use`, it will be **inherited** method list from the child, when using other methods, it will be **merged** with the method list of the child.
 
+### CORS
+
+```js
+server.use('/base', router, { cors: {} });
+router.get('/route', handler, { cors: {} });
+```
+
+```
+
 ## Licenses
 
 MIT.
+```

@@ -29,7 +29,9 @@ describe('Response test', function () {
     }));
 
     server.get('/response-method', async () =>
-      createOutput({ can: { be: ['json'] } })
+      createOutput({
+        can: { be: ['json'], and: { unicode: 'Thời tiết hôm nay rất được' } }
+      })
     );
 
     server.get('/cat-image', async () => ({
@@ -82,9 +84,12 @@ describe('Response test', function () {
     const res = await makeRequest().get('/response-method');
 
     expect(res).to.has.property('status', 200);
-    expect(res).to.has.property('text', `{"can":{"be":["json"]}}`);
+    expect(res).to.has.property(
+      'text',
+      `{"can":{"be":["json"],"and":{"unicode":"Thời tiết hôm nay rất được"}}}`
+    );
     expect(res.headers).to.has.property('content-type', 'application/json');
-    expect(res.headers).to.has.property('content-length', '23');
+    expect(res.headers).to.has.property('content-length', '81');
     expect(res.body).to.has.property('can');
   });
 

@@ -6,6 +6,7 @@ import { prepareInput } from './input.js';
 import { sendOutput } from './output.js';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 import { Router } from './router.js';
+import caseless from 'caseless';
 
 export class Server extends Router {
   constructor(config = {}) {
@@ -15,6 +16,7 @@ export class Server extends Router {
     this.host = config.host || DEFAULT_HOST;
     this.name = config.name || DEFAULT_NAME;
     this.debug = config.debug || false;
+    this.cors = config.cors || false;
 
     this.isRunning = false;
     this.logger = createLogger(this.name);
@@ -38,13 +40,28 @@ export class Server extends Router {
       // main handle
       const input = await prepareInput(req);
       let output;
-      try {
-        output = (await this.handleNext(0, input)) || {};
-      } catch (err) {
-        output = { body: err };
-        this.legacyServer.emit('error', err);
+
+      // cors
+      if (this.cors) {
+        if (input.method === 'OPTIONS')
+          output = {
+            status: 204,
+            ...this.postRoute({}, { cors: true })
+          };
       }
+
+      // routes
+      if (!output)
+        try {
+          output = (await this.handleNext(0, input)) || {};
+        } catch (err) {
+          output = { body: err };
+          this.legacyServer.emit('error', err);
+        }
+
+      output = this.postRoute(output, { cors: this.cors });
       isResponse = true;
+
       const nextOutput = sendOutput(res, output);
 
       // logging
@@ -68,9 +85,33 @@ export class Server extends Router {
     }
   }
 
+  postRoute(output = {}, options = {}) {
+    const headers = caseless(output.headers || {});
+
+    if (options.cors) {
+      !headers.has('Access-Control-Allow-Origin') &&
+        headers.set('Access-Control-Allow-Origin', '*');
+      !headers.has('Access-Control-Allow-Headers') &&
+        headers.set('Access-Control-Allow-Headers', '*');
+      !headers.has('Access-Control-Allow-Methods') &&
+        headers.set('Access-Control-Allow-Methods', '*');
+    }
+
+    output.headers = headers.dict;
+    return output;
+  }
+
   async handleNext(startIndex, input) {
     for (let i = startIndex; i < this.routes.length; i++) {
       const route = this.routes[i];
+
+      // cors
+      if (input.method.toLowerCase() === 'options' && route.options.cors) {
+        return {
+          status: 204,
+          ...this.postRoute({}, { cors: true })
+        };
+      }
 
       if (
         route.methods.indexOf('all') === -1 &&
@@ -82,7 +123,13 @@ export class Server extends Router {
       if (!result) continue;
 
       input.params = result.params;
-      return await route.handle(input, () => this.handleNext(i + 1, input));
+      const output = await route.handle(input, () =>
+        this.handleNext(i + 1, input)
+      );
+
+      return this.postRoute(output, {
+        cors: this.cors || route.options.cors || false
+      });
     }
   }
 

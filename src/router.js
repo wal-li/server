@@ -13,6 +13,7 @@ for (const method of ROUTE_METHODS)
     const paths = [];
     const handlers = [];
     const methods = method === 'use' ? [] : [method];
+    let options = {};
 
     // handle args
     for (const arg of args) {
@@ -21,6 +22,11 @@ for (const method of ROUTE_METHODS)
         paths.push(arg);
       } else if (typeOfArg === 'function' || arg instanceof Router) {
         handlers.push(arg);
+      } else if (typeOfArg === 'object' && arg) {
+        options = {
+          ...options,
+          ...arg
+        };
       } else {
         throw new Error(`Invalid argument '${typeOfArg}'`);
       }
@@ -38,7 +44,8 @@ for (const method of ROUTE_METHODS)
               methods: [...route.methods, ...methods],
               path: nextPath,
               match: match(nextPath, { decode: decodeURIComponent }),
-              handle: route.handle
+              handle: route.handle,
+              options
             });
           }
         } else {
@@ -46,7 +53,8 @@ for (const method of ROUTE_METHODS)
             methods,
             path,
             match: match(path, { decode: decodeURIComponent }),
-            handle: handler
+            handle: handler,
+            options
           });
         }
       }
