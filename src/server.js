@@ -85,7 +85,9 @@ export class Server extends Router {
     }
   }
 
-  postRoute(output = {}, options = {}) {
+  postRoute(output, options = {}) {
+    if (!output) output = {};
+
     const headers = caseless(output.headers || {});
 
     if (options.cors) {
