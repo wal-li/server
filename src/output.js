@@ -1,7 +1,8 @@
 import mime from 'mime';
+import caseless from 'caseless';
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
-import { getProp, isHTML } from './utils.js';
+import { isHTML } from './utils.js';
 
 export class OutputFile {
   constructor(path, skipError = false) {
@@ -17,7 +18,7 @@ export class OutputFile {
 }
 
 export function sendOutput(res, output) {
-  const headers = output.headers || {};
+  const headers = caseless(output.headers || {});
   let { body, status } = output;
 
   if (!status && !body) {
@@ -36,35 +37,26 @@ export function sendOutput(res, output) {
 
   // body response
   if (body instanceof OutputFile) {
-    if (!getProp(headers, 'content-length')) {
-      headers['content-length'] = body.stats.size;
-    }
-
-    if (!getProp(headers, 'content-type')) {
-      headers['content-type'] = mime.getType(body.path);
-    }
+    !headers.has('content-type') &&
+      headers.set('content-type', mime.getType(body.path));
+    !headers.has('content-length') &&
+      headers.set('content-length', body.stats.size);
   } else if (typeof body === 'string') {
-    if (!getProp(headers, 'content-type')) {
-      headers['content-type'] = isHTML(body) ? 'text/html' : 'text/plain';
-    }
-
-    if (!getProp(headers, 'content-length')) {
-      headers['content-length'] = body.length;
-    }
+    !headers.has('content-type') &&
+      headers.set('content-type', isHTML(body) ? 'text/html' : 'text/plain');
+    !headers.has('content-length') &&
+      headers.set('content-length', Buffer.byteLength(body));
   } else if (typeof body === 'object') {
     body = JSON.stringify(body);
 
-    if (!getProp(headers, 'content-type')) {
-      headers['content-type'] = 'application/json';
-    }
-
-    if (!getProp(headers, 'content-length')) {
-      headers['content-length'] = body.length;
-    }
+    !headers.has('content-type') &&
+      headers.set('content-type', 'application/json');
+    !headers.has('content-length') &&
+      headers.set('content-length', Buffer.byteLength(body));
   }
 
   // write
-  res.writeHead(status, headers);
+  res.writeHead(status, headers.dict);
 
   if (body instanceof OutputFile) {
     createReadStream(body.path).pipe(res);
