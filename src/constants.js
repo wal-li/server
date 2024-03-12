@@ -1,4 +1,4 @@
-import { METHODS } from 'node:http';
+import { METHODS as LEGACY_METHODS } from 'node:http';
 
 export const DEFAULT_PORT = 8080;
 export const DEFAULT_HOST = '127.0.0.1';
@@ -13,8 +13,15 @@ export const LOGGER_LEVELS = {
   fatal: 60
 };
 
-export const ROUTE_METHODS = [
-  ...METHODS.map((i) => i.toLowerCase()),
+/**
+ * @type {string}
+ * @const
+ * @example
+ *  // it can be the one in:
+ *  ['all', 'use', 'get', 'post', 'patch', 'put', 'delete', 'option',...]
+ */
+export const METHODS = [
+  ...LEGACY_METHODS.map((i) => i.toLowerCase()),
   'all',
   'use'
 ];

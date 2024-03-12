@@ -5,6 +5,8 @@
   "main": "./src/index.js",
   "type": "module",
   "scripts": {
+    "doc": "jsdoc --configure .jsdoc.json --verbose",
+    "deploy": "gh-pages -d docs",
     "test": "mocha --exit",
     "coverage": "c8 npm run test",
     "beta": "npm publish --access public --tag beta"
@@ -18,7 +20,12 @@
     "c8": "^8.0.1",
     "chai": "^4.3.10",
     "chai-http": "^4.4.0",
-    "mocha": "^10.2.0"
+    "clean-jsdoc-theme": "^4.2.17",
+    "gh-pages": "^6.1.1",
+    "jsdoc": "^4.0.2",
+    "minami": "^1.2.3",
+    "mocha": "^10.2.0",
+    "taffydb": "^2.7.3"
   },
   "dependencies": {
     "caseless": "^0.12.0",

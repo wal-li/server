@@ -8,7 +8,33 @@ import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 import { Router } from './router.js';
 import caseless from 'caseless';
 
+/**
+ * @typedef Config
+ * @property {number} port - default `8080`
+ * @property {string} host - default `"127.0.0.1"`
+ * @property {boolean} debug - default `false`
+ * @property {boolean} cors - default `false`
+ */
+
+/**
+ * @typedef Logger
+ * @property {function} info
+ * @property {function} success
+ * @property {function} error
+ * @property {function} warn
+ */
+
+/**
+ * Server definition
+ * @class
+ * @example
+ * import { Server } from '@wal-li/server';
+ * const server = new Server();
+ */
 export class Server extends Router {
+  /**
+   * @param {*} config
+   */
   constructor(config = {}) {
     super();
 
@@ -19,6 +45,8 @@ export class Server extends Router {
     this.cors = config.cors || false;
 
     this.isRunning = false;
+
+    /** @type {Logger} */
     this.logger = createLogger(this.name);
     this.legacyServer = createLegacyServer(this.serverCallback.bind(this));
 

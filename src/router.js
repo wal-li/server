@@ -1,14 +1,80 @@
 import { join } from 'node:path';
 import { match } from 'path-to-regexp';
-import { ROUTE_METHODS } from './constants.js';
+import { METHODS } from './constants.js';
 
+/**
+ * @typedef Route
+ * @property {METHODS[]} methods
+ * @property {string} path
+ * @property {function} match - path-to-regex
+ * @property {function} handle
+ * @property {object} options
+ */
+
+/**
+ * Manage the routing of incoming HTTP requests to the handlers.
+ * @class
+ * @example
+ * import { Router } from '@wal-li/server';
+ * const router = new Router();
+ * @tutorial nested-routing
+ */
 export class Router {
   constructor() {
+    /** @type {Route} */
     this.routes = [];
+  }
+
+  /**
+   * Add routes to the router.
+   * @param {METHODS[]} methods
+   * @param {string[]} paths
+   * @param {function[]} handlers
+   * @param {object[]} options
+   */
+  addRoutes(methods, paths, handlers, options = {}) {
+    for (const path of paths) {
+      for (const handler of handlers) {
+        if (handler instanceof Router) {
+          for (const route of handler.routes) {
+            const nextPath = join(
+              '/',
+              path.replace(/^\/+|\/+$/g, ''),
+              route.path.replace(/^\/+|\/+$/g, '')
+            );
+            this.routes.push({
+              methods: [...route.methods, ...methods],
+              path: nextPath,
+              match: match(nextPath, { decode: decodeURIComponent }),
+              handle: route.handle,
+              options
+            });
+          }
+        } else {
+          this.routes.push({
+            methods,
+            path,
+            match: match(path, { decode: decodeURIComponent }),
+            handle: handler,
+            options
+          });
+        }
+      }
+    }
   }
 }
 
-for (const method of ROUTE_METHODS)
+/**
+ * Add routes to the router. If you use `use` method, the router will be pass the method check step in parent, just check in client. If you use `all` method, the router will match all incomming http request methods.
+ * @memberof Router
+ * @method &lt;METHODS&gt;
+ * @param {...(string|function|object)} args - Depend on the type of arg, it can be:<br/>- `string` is methods<br/>- `function` is handlers<br/>- `object` is options<br/>. All options will be flatten.
+ * @instance
+ * @example
+ *  router.use('/abc', async function(){ ... }, { cors: true })
+ */
+
+for (const method of METHODS)
   Router.prototype[method] = function (...args) {
     const paths = [];
     const handlers = [];
@@ -34,31 +100,7 @@ for (const method of ROUTE_METHODS)
 
     if (paths.length === 0) paths.push('/');
 
-    // append routes
-    for (const path of paths) {
-      for (const handler of handlers) {
-        if (handler instanceof Router) {
-          for (const route of handler.routes) {
-            const nextPath = join(path, route.path);
-            this.routes.push({
-              methods: [...route.methods, ...methods],
-              path: nextPath,
-              match: match(nextPath, { decode: decodeURIComponent }),
-              handle: route.handle,
-              options
-            });
-          }
-        } else {
-          this.routes.push({
-            methods,
-            path,
-            match: match(path, { decode: decodeURIComponent }),
-            handle: handler,
-            options
-          });
-        }
-      }
-    }
+    this.addRoutes(methods, paths, handlers, options);
   };
 
 export function createRouter() {
