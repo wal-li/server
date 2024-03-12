@@ -9,5 +9,6 @@ coverage
 .jsdoc.json
 .gitignore
 .npmignore
+docs
 test
 tutorials
