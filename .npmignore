@@ -1,0 +1,13 @@
+# common
+dist
+node_modules
+coverage
+
+# private
+.github
+.prettierrc.json
+.jsdoc.json
+.gitignore
+.npmignore
+test
+tutorials

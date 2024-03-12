@@ -1,4 +1,6 @@
+# common
 dist
 node_modules
 coverage
-docs
+
+# private
