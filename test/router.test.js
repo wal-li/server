@@ -28,9 +28,16 @@ describe('Router test', function () {
     router.get('greet', botRouter);
 
     // without begin slash, add end slash
-    router.use('bonjour/', botRouter);
+    router.use(
+      'bonjour/',
+      // middleware
+      async (input, next) => {
+        return await next();
+      },
+      botRouter
+    );
 
-    expect(router.routes).to.has.property('length', 5);
+    expect(router.routes).to.has.property('length', 6);
     expect(router.routes[0]).to.has.property('path', '/greet');
     expect(router.routes[0].methods).to.has.members(['get']);
 
@@ -40,10 +47,13 @@ describe('Router test', function () {
     expect(router.routes[2]).to.has.property('path', '/greet/human');
     expect(router.routes[2].methods).to.has.members(['get', 'post']);
 
-    expect(router.routes[3]).to.has.property('path', '/bonjour/bot');
-    expect(router.routes[3].methods).to.has.members(['post']);
+    expect(router.routes[3]).to.has.property('path', '/bonjour');
+    expect(router.routes[3].methods).to.has.property('length', 0);
 
-    expect(router.routes[4]).to.has.property('path', '/bonjour/human');
+    expect(router.routes[4]).to.has.property('path', '/bonjour/bot');
     expect(router.routes[4].methods).to.has.members(['post']);
+
+    expect(router.routes[5]).to.has.property('path', '/bonjour/human');
+    expect(router.routes[5].methods).to.has.members(['post']);
   });
 });

@@ -45,16 +45,39 @@ export class Router {
             this.routes.push({
               methods: [...route.methods, ...methods],
               path: nextPath,
-              match: match(nextPath, { decode: decodeURIComponent }),
+              matches: [
+                // normal match
+                match(nextPath, { decode: decodeURIComponent }),
+                // use match
+                ...(route.methods.length === 0
+                  ? [
+                      match(join(nextPath, '(.*)'), {
+                        decode: decodeURIComponent
+                      })
+                    ]
+                  : [])
+              ],
               handle: route.handle,
               options
             });
           }
         } else {
+          const nextPath = join('/', path.replace(/^\/+|\/+$/g, ''));
           this.routes.push({
             methods,
-            path,
-            match: match(path, { decode: decodeURIComponent }),
+            path: nextPath,
+            matches: [
+              // normal match
+              match(nextPath, { decode: decodeURIComponent }),
+              // use match
+              ...(methods.length === 0
+                ? [
+                    match(join(nextPath, '(.*)'), {
+                      decode: decodeURIComponent
+                    })
+                  ]
+                : [])
+            ],
             handle: handler,
             options
           });

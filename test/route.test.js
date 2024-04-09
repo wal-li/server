@@ -13,11 +13,23 @@ describe('Route test', function () {
     server.all('/about', async () => ({ status: 200, body: 'About me' }));
 
     const subRouter = createRouter();
-    subRouter.get('/ok', () => ({ body: 'ok' }));
-    subRouter.post('/ok', () => ({ body: 'not ok' }));
+    subRouter.use(async (input, next) => {
+      input.prefix ||= '';
+      input.prefix += '2';
+      return await next();
+    });
+    subRouter.get('/ok', (input) => ({ body: input.prefix + ' ok' }));
+    subRouter.post('/ok', (input) => ({ body: input.prefix + ' not ok' }));
 
     server.use(subRouter);
-    server.use('/sub-route', subRouter);
+    server.use(
+      '/sub-route',
+      async (input, next) => {
+        input.prefix = '1 ';
+        return await next();
+      },
+      subRouter
+    );
 
     await server.start();
   });
@@ -47,14 +59,14 @@ describe('Route test', function () {
   it('should handle sub-route', async () => {
     const res = await makeRequest().get('/ok');
     expect(res).to.has.property('status', 200);
-    expect(res).to.has.property('text', 'ok');
+    expect(res).to.has.property('text', '2 ok');
 
     const res2 = await makeRequest().get('/sub-route/ok');
     expect(res2).to.has.property('status', 200);
-    expect(res2).to.has.property('text', 'ok');
+    expect(res2).to.has.property('text', '1 2 ok');
 
     const res3 = await makeRequest().post('/sub-route/ok');
     expect(res3).to.has.property('status', 200);
-    expect(res3).to.has.property('text', 'not ok');
+    expect(res3).to.has.property('text', '1 2 not ok');
   });
 });

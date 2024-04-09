@@ -146,12 +146,18 @@ export class Server extends Router {
       }
 
       if (
+        route.methods.length > 0 &amp;&amp;
         route.methods.indexOf('all') === -1 &amp;&amp;
         route.methods.indexOf(input.method.toLowerCase()) === -1
       )
         continue;
 
-      const result = route.match(input.path);
+      let result;
+      for (const match of route.matches) {
+        result = match(input.path);
+        if (result) break;
+      }
+
       if (!result) continue;
 
       input.params = result.params;
