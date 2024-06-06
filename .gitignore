@@ -5,3 +5,4 @@ coverage
 
 # private
 docs
+package-lock.json
