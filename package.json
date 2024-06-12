@@ -1,6 +1,6 @@
 {
   "name": "@wal-li/server",
-  "version": "2.0.11-beta.0",
+  "version": "2.0.11-beta.1",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,7 +12,6 @@
     "doc": "jsdoc --configure .jsdoc.json --verbose",
     "test": "jest --runInBand",
     "coverage": "jest --coverage --runInBand",
-    "beta": "npm publish --access public --tag beta",
     "typedoc": "typedoc"
   },
   "keywords": [
