@@ -1,5 +1,6 @@
 import caseless from 'caseless';
 import mime from 'mime';
+import cookie from 'cookie';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 import { isHTML } from './utils';
@@ -23,7 +24,7 @@ export class OutputFile {
 
 export function sendOutput(res: ServerResponse, output: any) {
   const headers: any = caseless(output.headers || {});
-  let { body, status } = output;
+  let { body, status, cookies = {} } = output;
 
   if (!status && !body) {
     status = StatusCodes.NOT_FOUND;
@@ -42,6 +43,7 @@ export function sendOutput(res: ServerResponse, output: any) {
   // body response
   if (body instanceof OutputFile) {
     !headers.has('content-type') &&
+      // @ts-ignore
       headers.set('content-type', mime.getType(body.path));
     !headers.has('content-length') &&
       headers.set('content-length', body.stats.size);
@@ -59,7 +61,24 @@ export function sendOutput(res: ServerResponse, output: any) {
       headers.set('content-length', Buffer.byteLength(body));
   }
 
-  // write
+  // write cookie
+  const cookieKeys = Object.keys(cookies);
+  if (cookieKeys.length) {
+    res.setHeader(
+      `Set-Cookie`,
+      cookieKeys.map((key) => {
+        const data = cookies[key];
+        const value = (typeof data === 'string' ? data : data?.value) || '';
+        const opts = (typeof data === 'string' ? {} : data) || {};
+
+        delete opts.value;
+
+        return cookie.serialize(key, String(value), opts);
+      })
+    );
+  }
+
+  // write status code and headers
   res.writeHead(status, headers.dict);
 
   if (body instanceof OutputFile) {

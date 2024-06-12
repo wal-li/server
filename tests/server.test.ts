@@ -150,4 +150,51 @@ describe('Server test', () => {
 
     await server.stop();
   });
+
+  test('should handle cookie', async () => {
+    // init server
+    server = createServer({ port: 8080 });
+    server.get('/get-cookie', async ({ cookies }) => ({
+      status: 200,
+      body: cookies
+    }));
+
+    server.get('/set-cookie', async ({ cookies }) => ({
+      status: 200,
+      body: 'ok',
+      cookies: {
+        foo: 'bar',
+        auth: {
+          value: 123,
+          httpOnly: true,
+          maxAge: 60 * 60 * 24 * 7 // 1 week
+        }
+      }
+    }));
+
+    // start server
+    await server.start();
+
+    // test server
+    const res = await request(server.address)
+      .get('/get-cookie')
+      .set('Cookie', 'foo=bar; abc=def;');
+    expect(res).toHaveProperty('status', 200);
+    expect(res.body).toHaveProperty('foo', 'bar');
+    expect(res.body).toHaveProperty('abc', 'def');
+
+    const res2 = await request(server.address)
+      .get('/set-cookie')
+      .set('Cookie', 'foo=bar; abc=def;');
+    expect(res2).toHaveProperty('status', 200);
+    expect(res2.text).toBe('ok');
+    expect(res2.headers).toHaveProperty('set-cookie');
+    expect(res2.headers['set-cookie']).toHaveProperty('length', 2);
+    expect(res2.headers['set-cookie'][0]).toBe('foo=bar');
+    expect(res2.headers['set-cookie'][1]).toBe(
+      'auth=123; Max-Age=604800; HttpOnly'
+    );
+
+    await server.stop();
+  });
 });
