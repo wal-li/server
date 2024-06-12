@@ -126,6 +126,7 @@ describe('Server test', () => {
     server.get('/', async () => {
       throw Error('Something wrong');
     });
+    server.get('/wrong-response', () => ({ status: 'wrong' }));
     server.get('/ok', () => ({ status: 200, body: 'ok' }));
     server.get('/never-end', () => new Promise(() => {}));
 
@@ -140,6 +141,10 @@ describe('Server test', () => {
     const res2 = await request(server.address).get('/ok');
     expect(res2).toHaveProperty('status', 200);
     expect(res2).toHaveProperty('text', 'ok');
+
+    const res3 = await request(server.address).get('/wrong-response');
+    expect(res3).toHaveProperty('status', 500);
+    expect(res3).toHaveProperty('text', 'Invalid status code: wrong');
 
     // request(server.address).get('/never-end').then();
 

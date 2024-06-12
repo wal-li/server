@@ -71,7 +71,7 @@ export class BaseRouter {
   }
 }
 
-type Router = BaseRouter & Record<Method, (...args: any) => void>;
+export type Router = BaseRouter & Record<Method, (...args: any) => void>;
 export const Router = class Router extends BaseRouter {} as new (
   ...args: ConstructorParameters<typeof BaseRouter>
 ) => Router;

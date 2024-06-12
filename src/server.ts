@@ -79,9 +79,9 @@ export class Server extends Router {
         }
 
       output = this.postRoute(output, { cors: this.cors });
-      isResponse = true;
 
       const nextOutput = sendOutput(res, output);
+      isResponse = true;
 
       // logging
       const ctime = +new Date();

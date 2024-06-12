@@ -19,11 +19,8 @@ export function createLogger(name: string) {
         case 'error':
           logTypeColor = colors.red;
           break;
-        case 'info':
+        case 'success':
           logTypeColor = colors.green;
-          break;
-        case 'http':
-          logTypeColor = colors.gray;
           break;
         default:
           logTypeColor = colors.gray;
