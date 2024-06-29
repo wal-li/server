@@ -3,6 +3,7 @@ import { Method } from './enum';
 
 export type Options = {
   cors?: boolean;
+  meta?: object;
 };
 
 export type Handler = (input?: any, next?: any) => Promise<any>;

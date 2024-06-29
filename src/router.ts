@@ -1,5 +1,6 @@
-import { join } from 'node:path';
+import { join } from 'node:path/posix';
 import { match } from 'path-to-regexp';
+import { merge } from 'lodash';
 
 import { Method } from './enum';
 import { Handler, Options, Route } from './types';
@@ -42,7 +43,7 @@ export class BaseRouter {
                   : [])
               ],
               handler: route.handler,
-              options
+              options: merge(options, route.options)
             });
           }
         } else {
@@ -92,10 +93,7 @@ Object.values(Method).forEach(
         } else if (typeOfArg === 'function' || arg instanceof Router) {
           handlers.push(arg);
         } else if (typeOfArg === 'object' && arg) {
-          options = {
-            ...options,
-            ...arg
-          };
+          options = merge(options, arg);
         } else {
           throw new Error(`Invalid argument '${typeOfArg}'`);
         }
